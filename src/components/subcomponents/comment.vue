@@ -1,35 +1,31 @@
 <template>
   <div class="cmt-container">
-    <h3>发表评论</h3>
-    <hr>
-    <textarea placeholder="请输入要BB的内容（做多吐槽120字）" maxlength="120" v-model="msg"></textarea>
+      <h3>发表评论</h3>
+      <hr>
+      <textarea placeholder="写吧 麻溜的(最多写120字)" maxlength="120" v-model="msg"></textarea>
 
-    <mt-button type="primary" size="large" @click="postComment">发表评论</mt-button>
-
-    <div class="cmt-list">
-      <div class="cmt-item" v-for="(item, i) in comments" :key="item.add_time">
-        <div class="cmt-title">
-          第{{ i+1 }}楼&nbsp;&nbsp;用户：{{ item.user_name }}&nbsp;&nbsp;发表时间：{{ item.add_time | dateFormat }}
-        </div>
-        <div class="cmt-body">
-          {{ item.content === 'undefined' ? '此用户很懒，嘛都没说': item.content }}
+      <mt-button type="primary" size="large" @click="postComment">发表评论</mt-button>
+      <div class="cmt-list">
+        <div class="cmt-item" v-for="(item , i) in comments" :key="item.add_time"><!-- 因为时间是不变的所以绑定时间 -->
+          <div class="cmt-title">
+            第{{ i+1 }}楼&nbsp;&nbsp;用户：{{item.user_name}}&nbsp;&nbsp;发表时间：{{item.add_time | dateFormat}}
+          </div>
+          <div class="cmt-body">
+            {{item.content === 'undefined' ? '我没说话' : item.content}}
+          </div>
         </div>
       </div>
-
-    </div>
-
-    <mt-button type="danger" size="large" plain @click="getMore">加载更多</mt-button>
+       <mt-button type="danger" size="large" plain @click="getMore">加载更多</mt-button>
   </div>
 </template>
-
 <script>
 import { Toast } from "mint-ui";
 export default {
   data() {
     return {
-      pageIndex: 1, // 默认展示第一页数据
-      comments: [], // 所有的评论数据
-      msg:''
+      pageIndex: 1, // 默认第一页
+      comments: [], // 存储评论数据
+      msg: ""
     };
   },
   created() {
@@ -37,49 +33,46 @@ export default {
   },
   methods: {
     getComments() {
-      // 获取评论
       this.$http
         .get("api/getcomments/" + this.id + "?pageindex=" + this.pageIndex)
         .then(result => {
           if (result.body.status === 0) {
-            // this.comments = result.body.message;
-            // 每当获取新评论数据的时候，不要把老数据清空覆盖，而是应该以老数据，拼接上新数据
-            this.comments = this.comments.concat(result.body.message);
+            this.comments = this.comments.concat(result.body.message); //concat() 方法用于连接两个或多个数组。 第一页和第二页拼接
           } else {
-            Toast("获取评论失败！");
+            Toast("评论获取失败");
           }
         });
     },
     getMore() {
-      // 加载更多
       this.pageIndex++;
       this.getComments();
     },
-    postComment(){
-      if(this.msg.trim().length===0){
-        return Toast('评论不能为空')
+    postComment() {
+      if (this.msg.trim().length === 0) {
+        return Toast("不能为空!");
       }
-
-      this.$http.post("api/postcomment/"+this.$route.params.id,{
-        content:this.msg.trim()
-      })
-      .then(function(result){
-        if(result.body.status===0){
-          var cmt={
-            user_name: "匿名用户",
-            add_time: Date.now(),
-            content: this.msg.trim()
-          };
-          this.comments.unshift(cmt);
-          this.msg="";
-        }
-      })
+      this.$http
+        .post("api/postcomment/" + this.$route.params.id, {
+          content: this.msg.trim()
+        })
+        .then(function(result) {
+          if (result.body.status === 0) {
+            // 1. 拼接出一个评论对象
+            var cmt = {
+              user_name: "匿名用户",
+              add_time: Date.now(),
+              content: this.msg.trim()
+            };
+            this.comments.unshift(cmt);
+            this.msg = "";
+          }
+        });
     }
   },
-  props: ["id"]
+
+  props: ["id"] //子组件向父组件传值
 };
 </script>
-
 <style lang="scss" scoped>
 .cmt-container {
   h3 {
@@ -87,10 +80,9 @@ export default {
   }
   textarea {
     font-size: 14px;
-    height: 85px;
     margin: 0;
+    height: 85px;
   }
-
   .cmt-list {
     margin: 5px 0;
     .cmt-item {
